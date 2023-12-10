@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Ground
   - Hazard
+  - Checkpoint
+  - DashPellet
   layers:
   - Default
   - TransparentFX

@@ -5,8 +5,10 @@ using TMPro;
 
 public class PlayerMovement : MonoBehaviour
 {
+
+    // Variables
     [Header("Movement")]
-    private float playerSpeed = 1f;
+    public float playerSpeed = 1f;
     public float baseSpeed = 1f;
 
     public float groundDrag;
@@ -35,6 +37,11 @@ public class PlayerMovement : MonoBehaviour
 
     public GameObject playerModel;
     public GameObject respawn;
+    // private movement vars
+    bool dashUnlocked = false;
+    bool canDash = false;
+    bool doubleJump;
+    int jumps = 1;
 
     private void Start()
     {
@@ -46,7 +53,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        MyInput();
+        PlayerInputs();
         SpeedControl();
 
         // Drag
@@ -64,25 +71,45 @@ public class PlayerMovement : MonoBehaviour
         MovePlayer();
     }
 
-    private void MyInput()
+    private void PlayerInputs()
     {
         // WASD Movement
         horizontalInput = Input.GetAxisRaw("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
 
-        if (Input.GetKeyDown(jumpKey) & grounded)
+        // Jumping
+        if (Input.GetKeyDown(jumpKey) && grounded)
         {
-            Jump();
-        }
-        if (Input.GetKey(sprintKey) & grounded)
+            if (grounded)
+            {
+                Jump();
+            }
+            else if (jumps > 0)
+            {
+                jumps--;
+                Jump();
+            }
+        } 
+
+        // Sprinting
+        if (grounded)
         {
-            playerSpeed = baseSpeed * 1.5f;
-        } else
+            if (Input.GetKey(sprintKey))
+            {
+                playerSpeed = baseSpeed * 1.5f;
+            }
+            else
+            {
+                playerSpeed = baseSpeed;
+            }
+
+            if (Input.GetKeyDown(dashKey) && canDash)
+            {
+                Dash();
+            }
+        } else if (Input.GetKeyDown(dashKey) && canDash)
         {
-            playerSpeed = baseSpeed;
-        }
-        if (Input.GetKeyDown(dashKey))
-        {
+            canDash = false;
             Dash();
         }
     }
@@ -113,7 +140,53 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // Check grounded & Respawn 
+    // Check grounded
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("Ground"))
+        {
+            groundCollisions++;
+            grounded = true;
+
+            if (doubleJump)
+            {
+                jumps = 2;
+            }
+            else
+            {
+                jumps = 1;
+            }
+
+            if (dashUnlocked)
+            {
+                canDash = true;
+            }
+        }
+        else if (other.gameObject.CompareTag("Hazard"))
+        {
+            this.transform.position = respawn.transform.position;
+        }
+        else if (other.gameObject.CompareTag("Checkpoint"))
+        {
+            if (respawn != null)
+            {
+                if (respawn.GetComponent<Checkpoint>())
+                {
+                    respawn.GetComponent<Checkpoint>().DeactivateBeacon();
+                }
+            }
+            respawn = other.gameObject;
+            respawn.GetComponent<Checkpoint>().ActivateBeacon();
+        }
+        else if (other.gameObject.CompareTag("DashPellet"))
+        {
+            dashUnlocked = true;
+            canDash = true;
+            Destroy(other.gameObject);
+        }
+    }
+
+    // Check grounded
     private void OnTriggerExit(Collider other)
     {
         if (other.gameObject.CompareTag("Ground")) 
@@ -126,17 +199,6 @@ public class PlayerMovement : MonoBehaviour
             }
          }
     } 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.CompareTag("Ground")) 
-        {
-            groundCollisions++;
-            grounded = true;
-        } else if (other.gameObject.CompareTag("Hazard")) 
-        {
-            this.transform.position = respawn.transform.position;
-        }
-    }
 
     private void Jump()
     {

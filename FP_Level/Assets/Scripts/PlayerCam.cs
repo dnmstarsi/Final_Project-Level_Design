@@ -10,8 +10,8 @@ public class PlayerCam : MonoBehaviour
     public Transform playerObj;
     public Rigidbody rb;
 
+    [Header("Customizations")]
     public float rotationSpeed;
-
     public bool cursor;
 
     private void Start()
