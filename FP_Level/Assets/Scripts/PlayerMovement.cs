@@ -6,13 +6,13 @@ using TMPro;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
-    public float playerSpeed = 1f;
+    private float playerSpeed = 1f;
+    public float baseSpeed = 1f;
 
     public float groundDrag;
     public float airMultiplier;
     public float jumpForce;
     public float dashForce;
-    public float quantumTimer;
 
     [Header("Keybinds")]
     public KeyCode jumpKey = KeyCode.Space;
@@ -23,25 +23,18 @@ public class PlayerMovement : MonoBehaviour
     public float playerHeight;
     public LayerMask whatIsGround;
     public bool grounded;
+    private int groundCollisions;
     private bool nullDrag;
 
-    private bool collision;
-
     public Transform orientation;
-
     float horizontalInput;
     float verticalInput;
-
     Vector3 moveDirection;
-
     Rigidbody rb;
-
     Collider m_ObjectCollider;
+
     public GameObject playerModel;
-
     public GameObject respawn;
-
-    public TextMeshProUGUI PhasestepTimer;
 
     private void Start()
     {
@@ -83,44 +76,15 @@ public class PlayerMovement : MonoBehaviour
         }
         if (Input.GetKey(sprintKey) & grounded)
         {
-            playerSpeed = 20;
+            playerSpeed = baseSpeed * 1.5f;
         } else
         {
-            playerSpeed = 10;
+            playerSpeed = baseSpeed;
         }
         if (Input.GetKeyDown(dashKey))
         {
             Dash();
         }
-        /*
-        // Card Abilites
-        if(Input.GetKeyDown(jumpKey) && !script.onDeckpoint)
-        {
-            if (script.selection.Count > 0)
-            {
-                if (script.selection[0].tag == "Jump")
-                {
-                    if (grounded)
-                    {
-                        Destroy(script.selection[0]);
-                        script.selection.RemoveAt(0);
-                        Jump();
-                    }
-                } else if (script.selection[0].tag == "Dash")
-                {
-                    Destroy(script.selection[0]);
-                    script.selection.RemoveAt(0);
-                    Dash();
-                } else if (script.selection[0].tag == "Quantum")
-                {
-                    Destroy(script.selection[0]);
-                    script.selection.RemoveAt(0);
-                    Quantum();
-                } 
-            }
-
-            script.SetHUD();
-        } */
     }
 
     private void MovePlayer()
@@ -152,19 +116,21 @@ public class PlayerMovement : MonoBehaviour
     // Check grounded & Respawn 
     private void OnTriggerExit(Collider other)
     {
-        collision = false;
-
         if (other.gameObject.CompareTag("Ground")) 
         {
-            grounded = false;
-        }
+            groundCollisions--;
+
+            if (groundCollisions < 1)
+            {
+                grounded = false;
+            }
+         }
     } 
     private void OnTriggerEnter(Collider other)
     {
-        collision =true;
-
         if (other.gameObject.CompareTag("Ground")) 
         {
+            groundCollisions++;
             grounded = true;
         } else if (other.gameObject.CompareTag("Hazard")) 
         {
@@ -176,9 +142,7 @@ public class PlayerMovement : MonoBehaviour
     {
         // reset y velocity
         rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
-
         rb.AddForce(transform.up * jumpForce * 10, ForceMode.Impulse);
-        grounded = false;
     }
 
     private void Dash()
@@ -187,30 +151,5 @@ public class PlayerMovement : MonoBehaviour
         rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
         rb.AddForce(transform.up * jumpForce * 2, ForceMode.Impulse);
         rb.AddForce(moveDirection.normalized * dashForce * 1000f, ForceMode.Impulse);
-    }
-
-    private void Quantum()
-    {
-        m_ObjectCollider.isTrigger = true;
-        nullDrag = true;
-
-        PhasestepTimer.text = "Quantum Tunneling Activated";
-
-        StartCoroutine(QuantumTermination());
-    }
-
-    IEnumerator QuantumTermination()
-    {
-        yield return new WaitForSeconds(quantumTimer);
-
-        m_ObjectCollider.isTrigger = false;
-        nullDrag = false;
-
-        PhasestepTimer.text = "";
-
-        if (collision) 
-        {
-            this.transform.position = respawn.transform.position;
-        }
     }
 }
