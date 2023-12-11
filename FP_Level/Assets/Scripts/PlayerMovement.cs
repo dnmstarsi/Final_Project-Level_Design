@@ -38,7 +38,7 @@ public class PlayerMovement : MonoBehaviour
     public GameObject playerModel;
     public GameObject respawn;
     // private movement vars
-    bool dashUnlocked = false;
+    public bool dashUnlocked = false;
     bool canDash = false;
     bool doubleJump;
     int jumps = 1;
